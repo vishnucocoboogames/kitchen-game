@@ -42,9 +42,20 @@ namespace KitchenGame.Editor
             var materials = CreateMaterials();
             var (vegData, cheeseData, meatData) = CreateIngredientDataAssets(materials);
             var ingredientPrefab = CreateIngredientPrefab(materials);
+            var vegPrefab = CreateVegetablePrefab(materials);
+            var meatPrefab = CreateMeatPrefab(materials);
+            var cheesePrefab = CreateCheesePrefab(materials);
+
+            vegData.customPrefab = vegPrefab;
+            meatData.customPrefab = meatPrefab;
+            cheeseData.customPrefab = cheesePrefab;
+            EditorUtility.SetDirty(vegData);
+            EditorUtility.SetDirty(meatData);
+            EditorUtility.SetDirty(cheeseData);
+
             var rowPrefab = CreateIngredientRowPrefab();
 
-            BuildGameScene(materials, vegData, cheeseData, meatData, ingredientPrefab, rowPrefab);
+            BuildGameScene(materials, vegData, cheeseData, meatData, ingredientPrefab, rowPrefab, vegPrefab, cheesePrefab, meatPrefab);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -234,7 +245,111 @@ namespace KitchenGame.Editor
             return prefab;
         }
 
-        private static void BuildGameScene(GameMaterials m, IngredientData veg, IngredientData cheese, IngredientData meat, GameObject ingPrefab, GameObject rowPrefab)
+        private static GameObject CreateVegetablePrefab(GameMaterials m)
+        {
+            string path = "Assets/Prefabs/VegetablePrefab.prefab";
+            GameObject root = new GameObject("VegetablePrefab");
+
+            // Normal visual (whole vegetable - emerald sphere)
+            GameObject normal = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            normal.name = "NormalVisual";
+            normal.transform.SetParent(root.transform);
+            normal.transform.localPosition = Vector3.zero;
+            normal.transform.localScale = new Vector3(0.35f, 0.35f, 0.35f);
+            normal.GetComponent<MeshRenderer>().sharedMaterial = m.RawVeg;
+            Object.DestroyImmediate(normal.GetComponent<Collider>());
+
+            // Chopped visual (diced pieces - prep veg material)
+            GameObject chopped = new GameObject("ChoppedVisual");
+            chopped.transform.SetParent(root.transform);
+            chopped.transform.localPosition = Vector3.zero;
+            chopped.transform.localScale = Vector3.one;
+
+            for (int i = 0; i < 4; i++)
+            {
+                var piece = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                piece.name = $"Slice_{i}";
+                piece.transform.SetParent(chopped.transform);
+                piece.transform.localScale = new Vector3(0.12f, 0.12f, 0.12f);
+                float ox = (i % 2 == 0 ? -0.07f : 0.07f);
+                float oz = (i / 2 == 0 ? -0.07f : 0.07f);
+                piece.transform.localPosition = new Vector3(ox, 0f, oz);
+                piece.GetComponent<MeshRenderer>().sharedMaterial = m.PrepVeg;
+                Object.DestroyImmediate(piece.GetComponent<Collider>());
+            }
+            chopped.SetActive(false);
+
+            var vegComp = root.AddComponent<Vegetable>();
+            var so = new SerializedObject(vegComp);
+            so.FindProperty("normalGameObject").objectReferenceValue = normal;
+            so.FindProperty("choppedGameObject").objectReferenceValue = chopped;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static GameObject CreateMeatPrefab(GameMaterials m)
+        {
+            string path = "Assets/Prefabs/MeatPrefab.prefab";
+            GameObject root = new GameObject("MeatPrefab");
+
+            // Uncooked visual (raw red slab)
+            GameObject uncooked = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            uncooked.name = "UncookedVisual";
+            uncooked.transform.SetParent(root.transform);
+            uncooked.transform.localPosition = Vector3.zero;
+            uncooked.transform.localScale = new Vector3(0.4f, 0.15f, 0.32f);
+            uncooked.GetComponent<MeshRenderer>().sharedMaterial = m.RawMeat;
+            Object.DestroyImmediate(uncooked.GetComponent<Collider>());
+
+            // Cooked visual (dark browned patty)
+            GameObject cooked = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            cooked.name = "CookedVisual";
+            cooked.transform.SetParent(root.transform);
+            cooked.transform.localPosition = Vector3.zero;
+            cooked.transform.localScale = new Vector3(0.38f, 0.08f, 0.38f);
+            cooked.GetComponent<MeshRenderer>().sharedMaterial = m.PrepMeat;
+            Object.DestroyImmediate(cooked.GetComponent<Collider>());
+            cooked.SetActive(false);
+
+            var meatComp = root.AddComponent<Meat>();
+            var so = new SerializedObject(meatComp);
+            so.FindProperty("uncookedGameObject").objectReferenceValue = uncooked;
+            so.FindProperty("cookedGameObject").objectReferenceValue = cooked;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static GameObject CreateCheesePrefab(GameMaterials m)
+        {
+            string path = "Assets/Prefabs/CheesePrefab.prefab";
+            GameObject root = new GameObject("CheesePrefab");
+
+            // Normal visual (yellow block)
+            GameObject normal = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            normal.name = "NormalVisual";
+            normal.transform.SetParent(root.transform);
+            normal.transform.localPosition = Vector3.zero;
+            normal.transform.localScale = new Vector3(0.32f, 0.22f, 0.32f);
+            normal.GetComponent<MeshRenderer>().sharedMaterial = m.Cheese;
+            Object.DestroyImmediate(normal.GetComponent<Collider>());
+
+            var cheeseComp = root.AddComponent<Cheese>();
+            var so = new SerializedObject(cheeseComp);
+            so.FindProperty("normalGameObject").objectReferenceValue = normal;
+            so.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
+        }
+
+        private static void BuildGameScene(GameMaterials m, IngredientData veg, IngredientData cheese, IngredientData meat, GameObject ingPrefab, GameObject rowPrefab, GameObject vegPrefab = null, GameObject cheesePrefab = null, GameObject meatPrefab = null)
         {
             string scenePath = "Assets/Scenes/Game.unity";
             var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
@@ -296,6 +411,9 @@ namespace KitchenGame.Editor
             fridgeComp.vegetableData = veg;
             fridgeComp.cheeseData = cheese;
             fridgeComp.meatData = meat;
+            fridgeComp.vegetablePrefab = vegPrefab;
+            fridgeComp.cheesePrefab = cheesePrefab;
+            fridgeComp.meatPrefab = meatPrefab;
 
             // Refrigerator UI (parent to stationsRoot to keep clean scale)
             var fridgeUI = CreateWorldCanvas("FridgeSelectionCanvas", stationsRoot.transform, new Vector3(4.1f, 1.35f, 2.7f), new Vector2(200, 110));

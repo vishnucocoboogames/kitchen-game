@@ -25,16 +25,16 @@ namespace KitchenGame.Player
         [SerializeField] private Transform holdPoint;          // child transform above player head
 
         [Header("Ingredient Prefab")]
-        [SerializeField] private GameObject ingredientPrefab;  // simple cube prefab with IngredientObject
+        [SerializeField] private GameObject ingredientPrefab;  // fallback cube prefab with Ingredient/IngredientObject
 
         // ── State ──────────────────────────────────────────────────────────────
-        public IngredientObject HeldIngredient { get; private set; } = null;
-        public bool             HasItem        => HeldIngredient != null;
+        public Ingredient HeldIngredient { get; private set; } = null;
+        public bool       HasItem        => HeldIngredient != null;
 
         // ── Events ─────────────────────────────────────────────────────────────
-        public event Action<IngredientObject> OnPickedUp;
-        public event Action                   OnDropped;
-        public event Action<string>           OnInteractHintChanged; // UI hint text
+        public event Action<Ingredient> OnPickedUp;
+        public event Action             OnDropped;
+        public event Action<string>     OnInteractHintChanged; // UI hint text
 
         // ── Internal ───────────────────────────────────────────────────────────
         private CharacterController _cc;
@@ -72,7 +72,7 @@ namespace KitchenGame.Player
         // ── Public API ─────────────────────────────────────────────────────────
 
         /// <summary>Give the player an ingredient. Fails silently if hands are full.</summary>
-        public bool TryPickUp(IngredientObject ingredient)
+        public bool TryPickUp(Ingredient ingredient)
         {
             if (HasItem || ingredient == null) return false;
 
@@ -87,7 +87,7 @@ namespace KitchenGame.Player
         }
 
         /// <summary>Remove and return the held ingredient (does not destroy it).</summary>
-        public IngredientObject TakeItem()
+        public Ingredient TakeItem()
         {
             if (!HasItem) return null;
 
@@ -109,25 +109,30 @@ namespace KitchenGame.Player
 
         /// <summary>
         /// Spawn a new ingredient from data and place it in the player's hand.
+        /// Can use an optional custom prefab or data.customPrefab; falls back to default ingredientPrefab.
         /// Called by Refrigerator.
         /// </summary>
-        public bool TrySpawnAndPickUp(IngredientData data)
+        public bool TrySpawnAndPickUp(IngredientData data, GameObject customPrefab = null)
         {
             if (HasItem) return false;
-            if (ingredientPrefab == null)
+            GameObject prefabToSpawn = customPrefab != null 
+                ? customPrefab 
+                : (data != null && data.customPrefab != null ? data.customPrefab : ingredientPrefab);
+
+            if (prefabToSpawn == null)
             {
-                Debug.LogError("[PlayerController] ingredientPrefab is not assigned!");
+                Debug.LogError("[PlayerController] No ingredient prefab is assigned!");
                 return false;
             }
 
             Transform parent = holdPoint != null ? holdPoint : transform;
-            GameObject go    = Instantiate(ingredientPrefab, parent);
+            GameObject go    = Instantiate(prefabToSpawn, parent);
             go.transform.localPosition = Vector3.zero;
             go.transform.localRotation = Quaternion.identity;
 
-            var obj = go.GetComponent<IngredientObject>();
+            var obj = go.GetComponent<Ingredient>();
             if (obj == null) obj = go.AddComponent<IngredientObject>();
-            obj.Initialize(data);
+            if (data != null) obj.Initialize(data);
 
             HeldIngredient = obj;
             OnPickedUp?.Invoke(obj);

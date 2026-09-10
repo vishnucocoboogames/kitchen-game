@@ -25,8 +25,8 @@ namespace KitchenGame.Stations
             public TextMeshProUGUI timerText;      // "5.2s"
             public GameObject      timerUI;        // panel to show/hide
 
-            [HideInInspector] public IngredientObject ingredient = null;
-            [HideInInspector] public StationTimer     timer      = null;
+            [HideInInspector] public Ingredient   ingredient = null;
+            [HideInInspector] public StationTimer timer      = null;
             [HideInInspector] public bool             isCooking  = false;
             [HideInInspector] public bool             readyToPickUp = false;
         }

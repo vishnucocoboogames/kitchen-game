@@ -29,10 +29,10 @@ namespace KitchenGame.Stations
         [SerializeField] public Transform  ingredientDisplayPoint; // where ingredient sits on table
 
         // ── State ──────────────────────────────────────────────────────────────
-        private IngredientObject _currentVeg  = null;
-        private StationTimer     _timer;
-        private bool             _isChopping  = false;
-        private bool             _readyToPickUp = false;
+        private Ingredient   _currentVeg  = null;
+        private StationTimer _timer;
+        private bool         _isChopping  = false;
+        private bool         _readyToPickUp = false;
 
         // ──────────────────────────────────────────────────────────────────────
 

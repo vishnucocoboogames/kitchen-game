@@ -20,6 +20,11 @@ namespace KitchenGame.Stations
         [SerializeField] public IngredientData cheeseData;
         [SerializeField] public IngredientData meatData;
 
+        [Header("Optional Custom Prefabs (Leave null to use data or default)")]
+        [SerializeField] public GameObject vegetablePrefab;
+        [SerializeField] public GameObject cheesePrefab;
+        [SerializeField] public GameObject meatPrefab;
+
         [Header("Selection UI (world-space canvas)")]
         [SerializeField] public GameObject selectionPanel;   // shown when player is in range
         [SerializeField] public UnityEngine.UI.Button btnVegetable;
@@ -37,9 +42,9 @@ namespace KitchenGame.Stations
             if (selectionPanel != null) selectionPanel.SetActive(false);
 
             // Wire buttons
-            if (btnVegetable) btnVegetable.onClick.AddListener(() => GiveIngredient(vegetableData));
-            if (btnCheese)    btnCheese.onClick.AddListener(()    => GiveIngredient(cheeseData));
-            if (btnMeat)      btnMeat.onClick.AddListener(()      => GiveIngredient(meatData));
+            if (btnVegetable) btnVegetable.onClick.AddListener(() => GiveIngredient(vegetableData, vegetablePrefab));
+            if (btnCheese)    btnCheese.onClick.AddListener(()    => GiveIngredient(cheeseData, cheesePrefab));
+            if (btnMeat)      btnMeat.onClick.AddListener(()      => GiveIngredient(meatData, meatPrefab));
         }
 
         private void Update()
@@ -50,17 +55,17 @@ namespace KitchenGame.Stations
             if (UnityEngine.InputSystem.Keyboard.current != null)
             {
                 var kb = UnityEngine.InputSystem.Keyboard.current;
-                if (kb.digit1Key.wasPressedThisFrame || kb.vKey.wasPressedThisFrame) GiveIngredient(vegetableData);
-                else if (kb.digit2Key.wasPressedThisFrame || kb.cKey.wasPressedThisFrame) GiveIngredient(cheeseData);
-                else if (kb.digit3Key.wasPressedThisFrame || kb.mKey.wasPressedThisFrame) GiveIngredient(meatData);
+                if (kb.digit1Key.wasPressedThisFrame || kb.vKey.wasPressedThisFrame) GiveIngredient(vegetableData, vegetablePrefab);
+                else if (kb.digit2Key.wasPressedThisFrame || kb.cKey.wasPressedThisFrame) GiveIngredient(cheeseData, cheesePrefab);
+                else if (kb.digit3Key.wasPressedThisFrame || kb.mKey.wasPressedThisFrame) GiveIngredient(meatData, meatPrefab);
             }
 #endif
 #if ENABLE_LEGACY_INPUT_MANAGER
             try
             {
-                if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.V)) GiveIngredient(vegetableData);
-                else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.C)) GiveIngredient(cheeseData);
-                else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.M)) GiveIngredient(meatData);
+                if (Input.GetKeyDown(KeyCode.Alpha1) || Input.GetKeyDown(KeyCode.V)) GiveIngredient(vegetableData, vegetablePrefab);
+                else if (Input.GetKeyDown(KeyCode.Alpha2) || Input.GetKeyDown(KeyCode.C)) GiveIngredient(cheeseData, cheesePrefab);
+                else if (Input.GetKeyDown(KeyCode.Alpha3) || Input.GetKeyDown(KeyCode.M)) GiveIngredient(meatData, meatPrefab);
             }
             catch {}
 #endif
@@ -88,10 +93,10 @@ namespace KitchenGame.Stations
 
         // ── Private ────────────────────────────────────────────────────────────
 
-        private void GiveIngredient(IngredientData data)
+        private void GiveIngredient(IngredientData data, GameObject customPrefab = null)
         {
             if (_playerInRange == null || data == null) return;
-            _playerInRange.TrySpawnAndPickUp(data);
+            _playerInRange.TrySpawnAndPickUp(data, customPrefab);
             TogglePanel(false);
             _playerInRange = null;
         }

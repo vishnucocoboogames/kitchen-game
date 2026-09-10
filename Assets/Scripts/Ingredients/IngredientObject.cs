@@ -1,19 +1,17 @@
 using UnityEngine;
-using KitchenGame.Ingredients;
 
 namespace KitchenGame.Ingredients
 {
     /// <summary>
-    /// Represents a physical ingredient in the 3D world.
-    /// Handles visual state (raw vs prepared) via color and scale changes.
+    /// Represents a physical ingredient in the 3D world (fallback/primitive renderer).
+    /// Handles visual state (raw vs prepared) via color and scale changes on a MeshRenderer.
+    /// Inherits from Ingredient base class for full backward-compatibility with existing prefabs.
     /// Compatible with both URP and Built-in Render Pipeline.
     /// </summary>
     [RequireComponent(typeof(MeshRenderer))]
-    public class IngredientObject : MonoBehaviour
+    public class IngredientObject : Ingredient
     {
-        // ── Data ───────────────────────────────────────────────────────────────
-        public IngredientData Data       { get; private set; }
-        public bool           IsPrepared { get; private set; } = false;
+        public override IngredientType IngredientType => data != null ? data.ingredientType : IngredientType.Vegetable;
 
         // ── Internal refs ──────────────────────────────────────────────────────
         private MeshRenderer _renderer;
@@ -21,40 +19,45 @@ namespace KitchenGame.Ingredients
 
         // ──────────────────────────────────────────────────────────────────────
 
-        private void Awake()
+        protected override void Awake()
         {
             _renderer = GetComponent<MeshRenderer>();
             _mpb = new MaterialPropertyBlock();
+            base.Awake();
         }
 
-        /// <summary>Initialize this ingredient with its data asset.</summary>
-        public void Initialize(IngredientData data)
+        public override void Initialize(IngredientData ingredientData)
         {
-            Data       = data;
+            data = ingredientData;
             IsPrepared = false;
             ApplyVisual();
         }
 
-        /// <summary>Mark this ingredient as prepared and update visuals.</summary>
-        public void SetPrepared()
+        /// <summary>Overload for backward compatibility.</summary>
+        public new void SetPrepared()
         {
-            IsPrepared = true;
-            ApplyVisual();
+            SetPrepared(true);
         }
 
-        /// <summary>Show or hide the world object.</summary>
-        public void SetVisible(bool visible)
+        public override void SetPrepared(bool prepared = true)
         {
-            gameObject.SetActive(visible);
+            base.SetPrepared(prepared);
+        }
+
+        protected override void UpdateVisuals()
+        {
+            ApplyVisual();
         }
 
         // ── Private ────────────────────────────────────────────────────────────
 
         private void ApplyVisual()
         {
-            if (Data == null || _renderer == null) return;
+            if (data == null) return;
+            if (_renderer == null) _renderer = GetComponent<MeshRenderer>();
+            if (_renderer == null) return;
 
-            Color targetColor = IsPrepared ? Data.preparedColor : Data.rawColor;
+            Color targetColor = IsPrepared ? data.preparedColor : data.rawColor;
 
             if (_mpb == null) _mpb = new MaterialPropertyBlock();
             _renderer.GetPropertyBlock(_mpb);

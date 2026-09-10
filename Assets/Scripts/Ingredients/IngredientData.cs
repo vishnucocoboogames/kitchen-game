@@ -28,5 +28,9 @@ namespace KitchenGame.Ingredients
         // Optional mesh — leave null to use default primitive
         public Mesh rawMesh;
         public Mesh preparedMesh;
+
+        [Header("Custom Prefab (Optional)")]
+        [Tooltip("Optional custom prefab for this ingredient (e.g. prefab with Vegetable, Meat, or Cheese script). If null, default prefab is used.")]
+        public GameObject customPrefab;
     }
 }
